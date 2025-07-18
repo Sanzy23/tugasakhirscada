@@ -13,8 +13,10 @@ Proyek ini merupakan implementasi sistem SCADA (Supervisory Control and Data Acq
 - Kompatibel dengan SCADA HMI (seperti Node-RED, SCADA software, atau PLC yang support Modbus)
 
 ## 📁 Struktur File
+```
 ├── modbus_rtu_slave.ino # Kode ESP32 sebagai slave Modbus RTU
 ├── modbus_tcp_server.ino # Kode ESP32 sebagai server Modbus TCP
+```
 
 
 ## 🧰 Teknologi & Library
@@ -54,9 +56,11 @@ Proyek ini merupakan implementasi sistem SCADA (Supervisory Control and Data Acq
    - `0x0002`: Nilai gas (x10)
 
 ### Output Serial Contoh
+
+```
 Temp: 28.5 °C | Hum: 62.0 %
 Gas Value : 60.0 %
-
+```
 
 ## 🔌 Contoh Konfigurasi di SCADA
 
