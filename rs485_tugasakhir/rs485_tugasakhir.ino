@@ -5,16 +5,14 @@ ModbusRTU mb;
 
 #define SLAVE_ID  1
 #define DE_RE_PIN 4
+
 // Sensor DHT
 #define DHTPIN  5
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 
-// Sensor MQ-2 (gas analog)
-#define MQ_PIN 19
-
 // Data register
-uint16_t temp = 0, hum = 0, gasVal = 0;
+uint16_t temp = 0, hum = 0
 
 // // Callback baca register (opsional)
 // bool cb(Modbus::FunctionCode fc, uint16_t addr, uint16_t& data) {
@@ -50,7 +48,6 @@ void setup() {
   // Tambahkan Holding Register
   mb.addHreg(0x0000); // Temp
   mb.addHreg(0x0001); // Hum
-  // mb.addHreg(0x0002); // Gas Value
 
   // Inisialisasi sensor
   dht.begin();
@@ -66,21 +63,13 @@ void loop() {
     Serial.println("Gagal membaca dari sensor DHT!");
     return;
   }
-
-  // Baca sensor gas (MQ-2)
-  // int gas = analogRead(MQ_PIN); // Nilai ADC 0–4095
-
-  // int gasVal = gas * 100 / 4095;
-  
   // Konversi ke format Modbus (x10 misalnya)
   uint16_t t      = (uint16_t)(temp * 10);
   uint16_t h      = (uint16_t)(hum * 10);
-  // uint16_t gVal   = (uint16_t)(gasVal * 10);
 
   // Update register
   mb.Hreg(0x0000, temp);
   mb.Hreg(0x0001, hum);
-  // mb.Hreg(0x0002, gVal);
 
   // Modbus task
   mb.task();
@@ -88,28 +77,6 @@ void loop() {
   // Debug
   Serial.print("Temp: "); Serial.print(temp); Serial.print(" °C | ");
   Serial.print("Hum: "); Serial.print(hum); Serial.println(" %");
-  // Serial.print("Gas: "); Serial.print(gasVal); Serial.println(" %");
+  
   delay(2000);
 }
-
-// void kirimData() {
-//   // Konversi ke format Modbus (x10 misalnya)
-//   temp   = (uint16_t)(temp * 10);
-//   hum    = (uint16_t)(hum * 10);
-//   gasVal = (uint16_t)(gasVal * 10);
-
-//   // Update register
-//   mb.Hreg(0x0000, temp);
-//   mb.Hreg(0x0001, hum);
-//   mb.Hreg(0x0002, gasVal);
-
-//   // Modbus task
-//   mb.task();
-// }
-
-// void DebugSerial() {
-//   // Debug
-//   Serial.print("Temp: "); Serial.print(temp); Serial.print(" °C | ");
-//   Serial.print("Hum: "); Serial.print(hum); Serial.print(" % | ");
-//   Serial.print("Gas: "); Serial.print(gasVal); Serial.println(" %");
-// } 
