@@ -1,14 +1,14 @@
-// #ifdef ESP8266
-//  #include <ESP8266WiFi.h>
-// #else
+#ifdef ESP8266
+ #include <ESP8266WiFi.h>
+#else
  #include <WiFi.h>
-// #endif
+#endif
 #include <ModbusIP_ESP8266.h>
 
 #define mq2ana 17
 
-const char* ssid = "Bentar lagi yok";
-const char* password = "diojambu";
+const char* ssid     = "ssid mu";
+const char* password = "password mu";
 
 ModbusIP mb;
 
@@ -26,7 +26,6 @@ void setup() {
 
   mb.server();          // Set as TCP server
   mb.addHreg(2);        // Register 0 (e.g. temperature)
-  // mb.addHreg(1);        // Register 1 (e.g. humidity)
 }
 
 void loop() {
@@ -39,8 +38,6 @@ void loop() {
   mb.Hreg(2, gasval);
 
   mb.task();
-  // 20.0 - 40.0
-  // mb.Hreg(1, random(500, 800));  // 50.0 - 80.0
 
   delay(2000);
 }
