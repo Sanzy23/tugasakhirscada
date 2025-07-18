@@ -43,14 +43,14 @@ Proyek ini merupakan implementasi sistem SCADA (Supervisory Control and Data Acq
 ### Cara Menggunakan
 
 #### 1. Modbus RTU (Slave)
-1. Unggah file `modbus_rtu_slave.ino` ke ESP32.
+1. Unggah file `rs485_tugasakhir.ino` ke ESP32.
 2. Hubungkan RS485 ke pin GPIO 16 (RX) dan GPIO 17 (TX).
 3. Jalankan Modbus Master dari PC/PLC dengan ID `1`, dan baca Holding Register:
    - `0x0000`: Suhu (x10)
    - `0x0001`: Kelembapan (x10)
 
 #### 2. Modbus TCP/IP (Server)
-1. Unggah file `modbus_tcp_server.ino` ke ESP32.
+1. Unggah file `tcp_tugasakhir.ino` ke ESP32.
 2. Ubah `ssid` dan `password` sesuai jaringan WiFi kamu.
 3. Baca Holding Register:
    - `0x0002`: Nilai gas (x10)
