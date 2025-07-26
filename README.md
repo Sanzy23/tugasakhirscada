@@ -1,76 +1,132 @@
-# Tugas Akhir SCADA - Monitoring Suhu, Kelembapan, dan Gas Berbasis Modbus RTU & TCP/IP
+# 🔧 Proyek SCADA IoT – Monitoring Suhu, Kelembapan, dan Gas dengan 2 ESP32
 
-Proyek ini merupakan implementasi sistem SCADA (Supervisory Control and Data Acquisition) berbasis ESP32 yang mampu membaca sensor suhu, kelembapan, dan gas, kemudian mengirimkan datanya melalui dua metode komunikasi: **Modbus RTU (RS485)** dan **Modbus TCP/IP (WiFi)**.
+Repositori ini berisi implementasi sistem SCADA berbasis IoT menggunakan **dua unit ESP32** yang bekerja secara terpisah:
 
-## 🔧 Fitur Utama
+- **ESP32 A** → Berfungsi sebagai **slave Modbus RTU (RS485)** untuk pembacaan sensor suhu & kelembapan dari DHT11  
+- **ESP32 B** → Berfungsi sebagai **server Modbus TCP/IP (WiFi)** untuk pembacaan sensor gas (MQ-2)
 
-- Pembacaan data sensor:
-  - DHT11 (suhu & kelembapan)
-  - MQ-2 (kadar gas)
-- Komunikasi Modbus RTU (Serial RS485) sebagai *slave*
-- Komunikasi Modbus TCP/IP (WiFi) sebagai *server*
-- Output data dalam satuan standar dan dikonversi ke register Modbus Holding Register
-- Kompatibel dengan SCADA HMI (seperti Node-RED, SCADA software, atau PLC yang support Modbus)
+Proyek ini ditujukan sebagai simulasi sistem pengawasan terdistribusi menggunakan protokol industri standar.
+---
 
-## 📁 Struktur File
-```text
-├── rs485_tugasakhir/rs485_tugasakhir.ino # Kode ESP32 sebagai slave Modbus RTU
-├── tcp_tugasakhir/tcp_tugasakhir.ino # Kode ESP32 sebagai server Modbus TCP
+## 🧱 Arsitektur Sistem
+
+```plaintext
+[SENSOR DHT11] → ESP32 A (Modbus RTU Slave)
+                                      ↘ RS485
+                                    [SCADA/HMI]
+
+[SENSOR MQ-2]  → ESP32 B (Modbus TCP Server)
+                                      ↘ WiFi
+                                    [SCADA/HMI]
+````
+
+---
+
+## 📂 Struktur Proyek
+
+```
+tugasakhirscada/
+├── rs485_tugasakhir/
+│   └── rs485_tugasakhir.ino   # ESP32 A - RTU Slave
+├── tcp_tugasakhir/
+│   └── tcp_tugasakhir.ino     # ESP32 B - TCP Server
+└── README.md
 ```
 
+---
 
-## 🧰 Teknologi & Library
+## ⚙️ Spesifikasi
 
-- [ESP32](https://www.espressif.com/en/products/socs/esp32)
-- Library:
-  - `ModbusRTU.h`
-  - `ModbusIP_ESP8266.h`
-  - `DHT.h`
-  - `WiFi.h` / `ESP8266WiFi.h`
+### 1️⃣ ESP32 A – RTU Slave
 
-## ⚙️ Instalasi dan Penggunaan
+* Sensor: **DHT11** (GPIO 5)
+* Komunikasi: **RS485** (Serial2: TX=17, RX=16)
+* ID Slave: `1`
+* Holding Register:
 
-### Persyaratan
+  * `0x0000` → Suhu (°C ×10)
+  * `0x0001` → Kelembapan (% ×10)
 
-- Board ESP32
-- Arduino IDE atau PlatformIO
-- Sensor:
-  - DHT11 di pin GPIO 5
-  - MQ-2 di pin GPIO 19 (Modbus RTU) dan GPIO 17 (Modbus TCP)
-- Koneksi RS485 (untuk Modbus RTU)
-- Jaringan WiFi (untuk Modbus TCP)
+### 2️⃣ ESP32 B – TCP Server
 
-### Cara Menggunakan
+* Sensor: **MQ-2** (GPIO 17)
+* Koneksi: **WiFi**
+* IP lokal diberikan oleh DHCP
+* Holding Register:
 
-#### 1. Modbus RTU (Slave)
-1. Unggah file `rs485_tugasakhir.ino` ke ESP32.
-2. Hubungkan RS485 ke pin GPIO 16 (RX) dan GPIO 17 (TX).
-3. Jalankan Modbus Master dari PC/PLC dengan ID `1`, dan baca Holding Register:
-   - `0x0000`: Suhu (x10)
-   - `0x0001`: Kelembapan (x10)
+  * `0x0002` → Gas (ADC ×10)
 
-#### 2. Modbus TCP/IP (Server)
-1. Unggah file `tcp_tugasakhir.ino` ke ESP32.
-2. Ubah `ssid` dan `password` sesuai jaringan WiFi kamu.
-3. Baca Holding Register:
-   - `0x0002`: Nilai gas (x10)
+---
 
-### Output Serial Contoh
+## 🔌 Instalasi dan Penggunaan
+
+### 🔧 ESP32 A (Modbus RTU)
+
+1. Sambungkan DHT11 ke pin GPIO 5
+2. Hubungkan RS485 ke GPIO 16 (RX) dan GPIO 17 (TX)
+3. Unggah `rs485_tugasakhir.ino`
+4. Gunakan software `modbuspoll` untuk membaca data dari ID slave `1`
+
+### 🌐 ESP32 B (Modbus TCP/IP)
+
+1. Sambungkan MQ-2 ke GPIO 17
+2. Ubah SSID dan password WiFi pada bagian berikut:
+   ```cpp
+   const char* ssid     = "ssid mu";
+   const char* password = "password mu";
+   ```
+3. Unggah `tcp_tugasakhir.ino`
+4. Gunakan software `modbuspoll.exe` untuk membaca data dari IP yang ditampilkan di serial monitor
+
+---
+
+## 🖥️ Output Serial (Contoh)
+
 ```text
+ESP32 Modbus RTU Slave dengan DHT & MQ-2
 Temp: 28.5 °C | Hum: 62.0 %
-Gas Value : 60.0 %
+Gas Value : 1372.0 %
 ```
 
-## 🔌 Contoh Konfigurasi di SCADA
+---
 
-| Register | Deskripsi     | Format  |
-|----------|---------------|---------|
-| 0x0000   | Suhu (°C × 10) | UINT16  |
-| 0x0001   | Kelembapan (%×10) | UINT16 |
-| 0x0002   | Kadar Gas (×10) | UINT16 |
+## 📊 Tabel Register
+
+| Register | Parameter  | ESP32   | Satuan |
+| -------- | ---------- | ------- | ------ |
+| 0x0000   | Suhu       | RTU (A) | °C ×10 |
+| 0x0001   | Kelembapan | RTU (A) | % ×10  |
+| 0x0002   | Gas        | TCP (B) | % ×10  |
+
+---
+
+## 📚 Library yang Digunakan
+
+* [`ModbusRTU`](https://github.com/esp8266/ModbusRTU)
+* [`ModbusIP_ESP8266`](https://github.com/emelianov/arduino-modbus)
+* `DHT`
+* `WiFi` / `ESP8266WiFi`
+
+---
 
 ## 🤝 Kontribusi
 
-Pull request sangat diterima. Untuk perubahan besar, mohon buka issue terlebih dahulu agar bisa didiskusikan.
+Pull request terbuka untuk penambahan fitur atau perbaikan bug. Silakan buat issue jika ada saran atau masalah.
 
+---
+
+## 👤 Penulis
+
+**Sanzy23**
+[GitHub – @Sanzy23](https://github.com/Sanzy23)
+
+---
+
+## 📝 Lisensi
+
+MIT License. Bebas digunakan untuk proyek pembelajaran maupun pengembangan lebih lanjut.
+
+```
+Silakan salin langsung ke file `README.md` di root repositorimu. Jika kamu ingin saya kirimkan versi `.md` atau menambahkan diagram visual, logo, atau dokumentasi wiring, tinggal bilang ya!
+```
 ---
