@@ -6,11 +6,11 @@
 
 #include <ModbusIP_ESP8266.h>
 
-#define MQ2_PIN 5   
+#define MQ2_PIN 34   
 #define GAS_MAX 100
 
-const char* ssid     = "ssid mu";
-const char* password = "password mu";
+const char* ssid     = "Bentar lagi yok";
+const char* password = "diojambu";
 
 ModbusIP mb;
 
