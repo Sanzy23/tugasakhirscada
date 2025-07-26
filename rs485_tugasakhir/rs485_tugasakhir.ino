@@ -1,29 +1,20 @@
-cp_#include <ModbusRTU.h>
+#include <ModbusRTU.h>
 #include <DHT.h>
 
 ModbusRTU mb;
 
 #define SLAVE_ID  1
 #define DE_RE_PIN 4
-
 // Sensor DHT
 #define DHTPIN  5
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 
-// Data register
-uint16_t temp = 0, hum = 0
+enum HumiState { HUMI_LOW = 0, HUMI_MID, HUMI_HIGH };
+enum TempState { TEMP_LOW = 0, TEMP_MID, TEMP_HIGH };
 
-// // Callback baca register (opsional)
-// bool cb(Modbus::FunctionCode fc, uint16_t addr, uint16_t& data) {
-//   Serial.print("[READ] FC: ");
-//   Serial.print((uint8_t)fc);
-//   Serial.print(" | Address: ");
-//   Serial.print(addr);
-//   Serial.print(" | Value: ");
-//   Serial.println(data);
-//   return true;
-// }
+HumiState humiState;
+TempState tempState;
 
 bool cbRead(TRegister* reg, float val) {
   // Callback saat master membaca
@@ -38,45 +29,58 @@ bool cbWrite(TRegister* reg, float val) {
 void setup() {
   Serial.begin(115200);
   while (!Serial);
-  Serial.println("ESP32 Modbus RTU Slave dengan DHT & MQ-2");
+  Serial.println("ESP32 Modbus RTU Slave dengan DHT11");
 
   // RS485 Modbus
-  Serial2.begin(9600, SERIAL_8N1, 16, 17);
+  Serial2.begin(9600, SERIAL_8N1, 16, 17); //RX = 16, TX= 17. RX masuk RO dan TX masuk DO
   mb.begin(&Serial2, DE_RE_PIN);
   mb.slave(SLAVE_ID);
 
-  // Tambahkan Holding Register
-  mb.addHreg(0x0000); // Temp
-  mb.addHreg(0x0001); // Hum
+  mb.addHreg(0x0000); // humi low (0-40%)
+  mb.addHreg(0x0001); // Humi mid (40-60%)
+  mb.addHreg(0x0002); // humi high (60-100%)
 
-  // Inisialisasi sensor
+  mb.addHreg(0x0003); // temp low (0-30 C) 
+  mb.addHreg(0x0004); // temp mid (30-40 C)
+  mb.addHreg(0x0005); // temp high (40-100 C)
+
   dht.begin();
 }
 
 void loop() {
-  // bacaSensor();
-  float temp = dht.readTemperature(); // Celsius
+  float temp = dht.readTemperature();
   float hum  = dht.readHumidity();
 
-  // Validasi pembacaan
   if (isnan(temp) || isnan(hum)) {
-    Serial.println("Gagal membaca dari sensor DHT!");
+    Serial.println("Gagal membaca dari sensor DHT11!");
     return;
   }
-  // Konversi ke format Modbus (x10 misalnya)
-  uint16_t t      = (uint16_t)(temp * 10);
-  uint16_t h      = (uint16_t)(hum * 10);
 
-  // Update register
-  mb.Hreg(0x0000, temp);
-  mb.Hreg(0x0001, hum);
+  if (hum <= 40) humiState = HUMI_LOW;
+  else if (hum <= 60) humiState = HUMI_MID;
+  else humiState = HUMI_HIGH;
 
-  // Modbus task
+  if (temp <= 30) tempState = TEMP_LOW;
+  else if (temp <= 40) tempState = TEMP_MID;
+  else tempState = TEMP_HIGH;
+
+  mb.Hreg(0x0000, humiState == HUMI_LOW   ? 1 : 0);
+  mb.Hreg(0x0001, humiState == HUMI_MID   ? 1 : 0);
+  mb.Hreg(0x0002, humiState == HUMI_HIGH  ? 1 : 0);
+
+  mb.Hreg(0x0003, tempState == TEMP_LOW   ? 1 : 0);
+  mb.Hreg(0x0004, tempState == TEMP_MID   ? 1 : 0);
+  mb.Hreg(0x0005, tempState == TEMP_HIGH  ? 1 : 0);
+
   mb.task();
 
-  // Debug
-  Serial.print("Temp: "); Serial.print(temp); Serial.print(" °C | ");
-  Serial.print("Hum: "); Serial.print(hum); Serial.println(" %");
-  
+  // Debug serial
+  Serial.println("-------------------------------");
+  Serial.print("Temperature : "); Serial.print(temp); Serial.println(" °C");
+  Serial.print("Humidity    : "); Serial.print(hum); Serial.println(" %");
+  Serial.print("Status Temp : "); Serial.println(tempState);
+  Serial.print("Status Humi : "); Serial.println(humiState);
+  Serial.println("-------------------------------");
+
   delay(2000);
 }
